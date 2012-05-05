@@ -218,7 +218,7 @@ Show a histogram of activity per timesheet.''')
     for sheet in histograms:
         total = 0
         print "Sheet: %s" % sheet
-        for task, duration in histograms[sheet].items():
+        for task, duration in sorted(histograms[sheet].items(), key=lambda x: x[1]):
             print " %s : %.1f hours" % (task, duration)
             total += duration
         print "Total: %.1f hours" % total
@@ -226,7 +226,7 @@ Show a histogram of activity per timesheet.''')
 
     total = 0
     print "Overall"
-    for task, duration in overall.items():
+    for task, duration in sorted(overall.items(), key=lambda x: x[1]):
         print " %s : %.1f hours" % (task, duration)
         total += duration
     print "Total: %.1f hours" % total
