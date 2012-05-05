@@ -205,11 +205,15 @@ Show a histogram of activity per timesheet.''')
 
     db.execute(sql, (time.mktime(opts.start_date.timetuple()), time.mktime(opts.end_date.timetuple())))
     from collections import defaultdict
+    overall = {}
     histograms = defaultdict(dict, {})
     for row in db.fetchall():
         sheet_histogram = histograms[row[0]]
         task_time = sheet_histogram.get(row[3], 0) + (row[2] - row[1]) / 3600.
         sheet_histogram[row[3]] = task_time 
+
+        task_time = overall.get(row[3], 0) + (row[2] - row[1]) / 3600.
+        overall[row[3]] = task_time 
 
     for sheet in histograms:
         total = 0
@@ -219,7 +223,14 @@ Show a histogram of activity per timesheet.''')
             total += duration
         print "Total: %.1f hours" % total
         print ""
-        
+
+    total = 0
+    print "Overall"
+    for task, duration in overall.items():
+        print " %s : %.1f hours" % (task, duration)
+        total += duration
+    print "Total: %.1f hours" % total
+    print ""
     
 
 @command('show the available timesheets', aliases=('ls',))
