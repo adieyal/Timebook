@@ -180,8 +180,11 @@ List the available timesheets.''')
     parser.add_option('-s', '--simple', dest='simple',
                       action='store_true', help='Only display the names \
 of the available timesheets.')
+    parser.add_option('-d', '--daylength', dest='day_length', default=60*60*24.0,
+                      type='float', help='Determine how long a day is (in seconds)')
     opts, args = parser.parse_args(args=args)
 
+    day_length = opts.day_length
     if opts.simple:
         db.execute(
         u'''
@@ -233,8 +236,11 @@ of the available timesheets.')
         cur_name = '%s%s' % ('*' if is_current else ' ', name)
         active = str(timedelta(seconds=active)) if active != 0 \
                                                 else '--'
+        days = total / day_length
+        
         today = str(timedelta(seconds=today))
-        total_time = str(timedelta(seconds=total))
+        total_time = str("%.2f days" % days)
+        #total_time = str(timedelta(seconds=total))
         table.append([cur_name, active, today, total_time])
     cmdutil.pprint_table(table)
 
