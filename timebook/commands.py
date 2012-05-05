@@ -29,6 +29,7 @@ import os
 import subprocess
 import sys
 import time
+from optionparseextras import DateOption
 
 from timebook import dbutil, cmdutil
 
@@ -171,6 +172,55 @@ timesheet and switch to the default timesheet.''')
     db.execute(u'delete from entry where sheet = ?', (to_delete,))
     if switch_to_default:
         switch(db, ['default'])
+
+@command('show totals per activity per timesheet', aliases=('histogram',))
+def histogram(db, args):
+    one_week = timedelta(weeks=1)
+    today = datetime.now()
+    last_week = today - one_week
+    parser = OptionParser(option_class=DateOption, usage='''usage: %prog list
+
+Show a histogram of activity per timesheet.''')
+    parser.add_option('-s', '--start', dest='start_date', default=last_week,
+                      type='date', help='Start date for calculating histogram')
+    parser.add_option('-e', '--end', dest='end_date', default=today,
+                      type='date', help='End date for calculating histogram')
+
+    opts, args = parser.parse_args(args=args)
+    sql = '''
+        select
+            distinct sheet,
+            start_time,
+            end_time,
+            description
+        from
+            entry
+        where
+            start_time >= ?
+            and end_time < ?
+        order by
+            sheet asc,
+            start_time asc;
+    '''
+
+    db.execute(sql, (time.mktime(opts.start_date.timetuple()), time.mktime(opts.end_date.timetuple())))
+    from collections import defaultdict
+    histograms = defaultdict(dict, {})
+    for row in db.fetchall():
+        sheet_histogram = histograms[row[0]]
+        task_time = sheet_histogram.get(row[3], 0) + (row[2] - row[1]) / 3600.
+        sheet_histogram[row[3]] = task_time 
+
+    for sheet in histograms:
+        total = 0
+        print "Sheet: %s" % sheet
+        for task, duration in histograms[sheet].items():
+            print " %s : %.1f hours" % (task, duration)
+            total += duration
+        print "Total: %.1f hours" % total
+        print ""
+        
+    
 
 @command('show the available timesheets', aliases=('ls',))
 def list(db, args):
